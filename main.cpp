@@ -1,25 +1,138 @@
 #include <iostream>
 #include <iomanip>
+#include <cmath>
 
-double** jordan(double **system,int row,int column,int iPivot,int jPivot);
+
+
+class fractional
+{
+    int gcd(int a, int b)
+    {
+        int d = 1;
+        while(a % 2 == 0 && b % 2 == 0)
+        {
+            a = a >> 1;
+            b = b >> 1;
+            d = d << 1;
+        }
+
+        while(a % 2 == 0)
+        {
+            a = a >> 1;
+        }
+
+        while(b != 0)
+        {
+            while (b % 2 == 0)
+            {
+                b = b >> 1;
+            }
+            int tmpA = std::min(a,b);
+            b = abs(a - b);
+            a = tmpA;
+        }
+        d = d * a;
+        return d;
+    }
+public:
+    int denominator;
+    int numerator;
+
+    fractional() {}
+    fractional(int numerator, int denominator)
+    {
+        if(numerator == 0)
+        {
+            this->numerator = 0;
+            this->denominator =1;
+            return;
+        }
+        int gcdAB = gcd(abs(numerator),abs(denominator));
+        while(gcdAB != 1)
+        {
+            numerator = numerator / gcdAB;
+            denominator = denominator / gcdAB;
+            gcdAB = gcd(abs(numerator),abs(denominator));
+        }
+        if((numerator < 0 && denominator < 0) || (numerator > 0 && denominator < 0))
+        {
+            this->numerator = -1*numerator;
+            this->denominator = -1*denominator;
+            return;
+        }
+        this->numerator = numerator;
+        this->denominator = denominator;
+
+    }
+    friend fractional operator * (const fractional& Left,const fractional& Right)
+    {
+        int numerator = Left.numerator * Right.numerator;
+        int denominator = Left.denominator * Right.denominator;
+        return fractional(numerator,denominator);
+    }
+    friend fractional operator - (const fractional& Left,const fractional& Right)
+    {
+        int numeratorL = Left.numerator * Right.denominator;
+        int numeratorR = Right.numerator * Left.denominator;
+        int numerator = numeratorL - numeratorR;
+        int denominator = Left.denominator*Right.denominator;
+        return fractional(numerator,denominator);
+    }
+    friend fractional operator / (const fractional& Left,const fractional& Right)// 1/0
+    {
+        int numerator = Left.numerator * Right.denominator;
+        int denominator = Left.denominator * Right.numerator;
+        return fractional(numerator,denominator);
+    }
+    friend std::ostream& operator << (std::ostream& os, const fractional& Right)
+    {
+        if(Right.denominator == 1 || Right.numerator == 0)
+        {
+            os << Right.numerator;
+            return os;
+        }
+        os << Right.numerator << '/' << Right.denominator;
+        return os;
+    }
+
+};
+
+fractional** jordan(fractional **system,int row,int column,int iPivot,int jPivot);
 int* simplex(int **system,int row,int column);
 
 int main()
 {
-    int *F;
-    double **system;
+//     while(true)
+//     {
+//         int a,b,c,d;
+//         std::cin>>a;
+//
+//         std::cin>>b;
+//
+//
+//         std::cin>>c;
+//
+//         std::cin>>d;
+//         fractional r(a,b);
+//         fractional r1(c,d);
+//         fractional res = r - r1;
+//         std::cout<<res<<'\n';
+//     }
+//    int *F;
+    fractional **system;
     int row,column,iPivot,jPivot;
     //std::cout<<"type size of system\n";
     std::cin>>row>>column;
     //std::cout<<"type pivot index\n";
     //std::cin>>iPivot>>jPivot;
-    system = new double*[row];
+    system = new fractional*[row];
     for(int i = 0; i < row; ++i)
     {
-        system[i] = new double[column];
+        system[i] = new fractional[column];
         for(int j = 0; j < column; ++j)
         {
-            std::cin>>system[i][j];
+            std::cin>>system[i][j].numerator;
+            system[i][j].denominator = 1;
         }
     }
     while(true)
@@ -31,7 +144,7 @@ int main()
         {
             for(int j = 0; j < column; ++j)
             {
-                std::cout<<system[i][j]<<std::setw(15)<<std::setfill(' ');
+                std::cout<<system[i][j]<<std::setw(12)<<std::setfill(' ');
             }
             std::cout<<'\n';
         }
@@ -40,11 +153,12 @@ int main()
     return 0;
 }
 /*
-0 0
-1 1 7 -3 -7 -13
-1 2 13 2 -14 -20
-1 3 20 6 -23 -19
-
+4 4
+-3 -1 0 3
+2 -1 -1 2
+-1 2 0 1
+1 -1 0 0
+1 1
  */
 
 double* simplex(double **system,int row,int column)
@@ -65,15 +179,15 @@ double* simplex(double **system,int row,int column)
 
 }
 
-double** jordan(double **system,int row,int column,int iPivot,int jPivot)
+fractional** jordan(fractional **system,int row,int column,int iPivot,int jPivot)
 {
-    double **result;//double
-    result = new double*[row];
+    fractional **result;//double
+    result = new fractional*[row];
     for(int i = 0; i < row; ++i)
     {
-        result[i] = new double[column];
+        result[i] = new fractional[column];
     }
-    double pivotElement = system[iPivot][jPivot];
+    fractional pivotElement = system[iPivot][jPivot];
 
     for(int i = 0; i < row; ++i)
     {
@@ -82,7 +196,6 @@ double** jordan(double **system,int row,int column,int iPivot,int jPivot)
             if(i != iPivot && j != jPivot)
             {
                 result[i][j] = (system[iPivot][jPivot] * system[i][j] - system[i][jPivot]*system[iPivot][j])/pivotElement;
-
             } else
             {
                 result[i][j] = system[i][j]/pivotElement;
@@ -92,11 +205,11 @@ double** jordan(double **system,int row,int column,int iPivot,int jPivot)
 
     for(int j = 0; j < column; ++j)
     {
-        result[iPivot][j] *= -1;
+        result[iPivot][j].numerator *= -1;
     }
 
-    result[iPivot][jPivot] = 1;
-
+    result[iPivot][jPivot].numerator = 1;
+    result[iPivot][jPivot].denominator = 1;
     return result;
 }
 
