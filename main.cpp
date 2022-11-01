@@ -1,35 +1,37 @@
 #include <iostream>
+#include <iomanip>
 
-int** jordan(int **system,int row,int column,int iPivot,int jPivot);
-void simplex();
+double** jordan(double **system,int row,int column,int iPivot,int jPivot);
+int* simplex(int **system,int row,int column);
 
 int main()
 {
     int *F;
-    int **system;
+    double **system;
     int row,column,iPivot,jPivot;
-    std::cout<<"type size of system\n";
+    //std::cout<<"type size of system\n";
     std::cin>>row>>column;
     //std::cout<<"type pivot index\n";
-    std::cin>>iPivot>>jPivot;
-    system = new int*[row];
+    //std::cin>>iPivot>>jPivot;
+    system = new double*[row];
     for(int i = 0; i < row; ++i)
     {
-        system[i] = new int[column];
+        system[i] = new double[column];
         for(int j = 0; j < column; ++j)
         {
             std::cin>>system[i][j];
         }
     }
-    for(int k=0;k<3;++k)
+    while(true)
     {
+        std::cin>>iPivot>>jPivot;
         std::cout<<'\n';
-        system = jordan(system,row,column,k,k);
+        system = jordan(system,row,column,iPivot,jPivot);
         for(int i = 0; i < row; ++i)
         {
-            for(int j = k; j < column; ++j)
+            for(int j = 0; j < column; ++j)
             {
-                std::cout<<system[i][j]<<' ';
+                std::cout<<system[i][j]<<std::setw(15)<<std::setfill(' ');
             }
             std::cout<<'\n';
         }
@@ -45,15 +47,33 @@ int main()
 
  */
 
-int** jordan(int **system,int row,int column,int iPivot,int jPivot)
+double* simplex(double **system,int row,int column)
 {
-    int **result;
-    result = new int*[row];
-    for(int i = 0; i < row; ++i)
+    int* x = new int[column];
+    //шукаємо допустимий базисний розвязок
+    bool isAdmissBase = false;
+    while(!isAdmissBase)
     {
-        result[i] = new int[column];
+        for(int i = 0; i < row - 1; ++i)//на останньому рядку у нас записана цільова функція, тому проходимо на 1 рядок меньше
+        {
+            if(system[i][column-1] < 0)
+            {
+                isAdmissBase *= false;
+            }
+        }
     }
 
+}
+
+double** jordan(double **system,int row,int column,int iPivot,int jPivot)
+{
+    double **result;//double
+    result = new double*[row];
+    for(int i = 0; i < row; ++i)
+    {
+        result[i] = new double[column];
+    }
+    double pivotElement = system[iPivot][jPivot];
 
     for(int i = 0; i < row; ++i)
     {
@@ -61,15 +81,16 @@ int** jordan(int **system,int row,int column,int iPivot,int jPivot)
         {
             if(i != iPivot && j != jPivot)
             {
-                result[i][j] = system[iPivot][jPivot] * system[i][j] - system[i][jPivot]*system[iPivot][j];
+                result[i][j] = (system[iPivot][jPivot] * system[i][j] - system[i][jPivot]*system[iPivot][j])/pivotElement;
+
             } else
             {
-                result[i][j] = system[i][j];
+                result[i][j] = system[i][j]/pivotElement;
             }
         }
     }
 
-    for(int j = 1; j < column; ++j)
+    for(int j = 0; j < column; ++j)
     {
         result[iPivot][j] *= -1;
     }
