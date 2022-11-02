@@ -100,6 +100,7 @@ public:
 
 fractional** jordan(fractional **system,int row,int column,int iPivot,int jPivot);
 fractional** simplex(fractional **system,int row,int column, std::vector<std::string> &X, std::vector<std::string> &Y);
+fractional** admissibleBasicSolution(fractional **system,int row,int column, std::vector<std::string> &X, std::vector<std::string> &Y);
 fractional** deleteEquals(fractional **system,int &row,int &column,std::vector<int>& Ysign,std::vector<std::string> &X,std::vector<std::string> &Y);
 
 void printMatrix(fractional **system,int &row,int &column,std::vector<std::string> &X,std::vector<std::string> &Y)
@@ -137,25 +138,6 @@ void printMatrix(fractional **system,int &row,int &column,std::vector<std::strin
 
 int main()
 {
-
-
-//     while(true)
-//     {
-//         int a,b,c,d;
-//         std::cin>>a;
-//
-//         std::cin>>b;
-//
-//
-//         std::cin>>c;
-//
-//         std::cin>>d;
-//         fractional r(a,b);
-//         fractional r1(c,d);
-//         fractional res = r - r1;
-//         std::cout<<res<<'\n';
-//     }
-//    int *F;
     std::cout<<"System must have only = or ≥,\nif you want type = you must type 0,\nif you want type ≥ you must type 1,\n";
 
     std::vector<std::string> X,Y;
@@ -192,34 +174,19 @@ int main()
         }
     }
     printMatrix(system,row,column,X,Y);
+    std::cout<<"\n\ndelete equals:\n\n";
     system = deleteEquals(system,row,column,Ysign,X,Y);
+
     if(system == nullptr)
         return 0;
-    std::cout<<"Simplex\n";
+
+    std::cout<<"\n\nfind admissible basic solution:\n\n";
+    system = admissibleBasicSolution(system,row,column,X,Y);
+
+    if(system == nullptr)
+        return 0;
+    std::cout<<"\n\nSimplex:\n\n";
     system = simplex(system,row,column,X,Y);
-    for(int i = 0; i < row; ++i)
-        {
-
-            for(int j = 0; j < column; ++j)
-            {
-                std::cout<<system[i][j]<<std::setw(12)<<std::setfill(' ');
-            }
-            std::cout<<'\n';
-        }
-    while(true)
-    {
-        std::cin>>iPivot>>jPivot;
-        std::cout<<'\n';
-        system = jordan(system,row,column,iPivot,jPivot);
-        std::cout<<"   ";
-        for(int j = 0; j < column; ++j)
-        {
-            std::cout<<"X"<<j+1<<std::setw(12)<<std::setfill(' ');
-        }
-        std::cout<<'\n';
-        printMatrix(system,row,column,X,Y);
-
-    }
 
     return 0;
 }
@@ -229,11 +196,6 @@ int main()
 3 2 1 -3 0 0 -18 0
 -1 3 0 4 0 1 -24 0
 -2 -3 0 1 0 0 0
-
-3 4
-1 2 3 -5 0
-1 3 4 -6 0
-2 -1 -1 -1
 
  */
 
@@ -280,6 +242,70 @@ fractional** deleteEquals(fractional **system,int& row,int& column,std::vector<i
         }
     }
     return system;
+}
+
+fractional** admissibleBasicSolution(fractional **system,int row,int column, std::vector<std::string> &X, std::vector<std::string> &Y)
+{
+    bool isReady = true;
+    for(int i = 0; i < row -1; ++i)
+    {
+        if(system[i][column - 1].numerator < 0)
+        {
+            isReady *= false;
+        }
+    }
+    while(!isReady)
+    {
+        std::cout<<"min = {";
+        double min = INT_MAX;
+        int minI,minJ;
+        for(int i = 0; i < row - 1; ++i)
+        {
+            if(system[i][column - 1].numerator < 0)
+            {
+                for(int j = 0; j < column - 1; ++j)
+                {
+                    if(system[i][j].numerator > 0)
+                    {
+                        fractional tmp = system[i][column - 1]/system[i][j];
+                        double local = tmp.numerator/tmp.denominator;
+                        std::cout<<local<<',';
+                        if(local < min)
+                        {
+                            min = local;
+                            minI = i;
+                            minJ = j;
+                        }
+                    }
+                }
+            }
+        }
+
+        std::cout<<"} = "<<min<<'\n';
+        if(min == INT_MAX)
+        {
+            std::cout<<"System has no solutions\n";
+            return nullptr;
+        }
+        system = jordan(system,row,column,minI,minJ);
+
+
+        std::cout<<"swap("<<X[minJ]<<", "<<Y[minI]<<')'<<'\n';
+        swap(X[minJ],Y[minI]);
+        printMatrix(system,row,column,X,Y);
+
+        isReady = true;
+        for(int i = 0; i < row - 1; ++i)
+        {
+            if(system[i][column - 1].numerator < 0)
+            {
+                isReady *= false;
+            }
+        }
+    }
+
+    return system;
+
 }
 
 fractional** simplex(fractional **system,int row,int column,std::vector<std::string> &X,std::vector<std::string> &Y)
